@@ -1,0 +1,18 @@
+{
+  "name": "ai-ranking",
+  "description": "Website build skills from AI Ranking.",
+  "owner": {
+    "name": "AI Ranking",
+    "url": "https://www.airankingskool.com"
+  },
+  "plugins": [
+    {
+      "name": "ai-ranking",
+      "source": "./plugins/ai-ranking",
+      "description": "ai-ranking-scroll-seo: premium scroll-driven websites that also pass SEO gates: WebP-only images, JSON-LD schema, keyword-matched title and H1, Lighthouse 95+ on all four scores, and agentic browsing readiness.",
+      "version": "1.0.0",
+      "author": { "name": "AI Ranking" },
+      "license": "MIT"
+    }
+  ]
+}

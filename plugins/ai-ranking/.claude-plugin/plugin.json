@@ -1,0 +1,11 @@
+{
+  "name": "ai-ranking",
+  "description": "Website build skills from AI Ranking. Ships ai-ranking-scroll-seo: premium scroll-driven websites gated on SEO, speed (Lighthouse 95+), schema, multi-language and agentic browsing.",
+  "version": "1.0.0",
+  "author": {
+    "name": "AI Ranking"
+  },
+  "homepage": "https://github.com/NicoSKOOL/ai-ranking-scroll-seo",
+  "license": "MIT",
+  "repository": "https://github.com/NicoSKOOL/ai-ranking-scroll-seo"
+}
