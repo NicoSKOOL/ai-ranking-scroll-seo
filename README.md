@@ -8,7 +8,11 @@ done until it passes five hard gates: WebP images inside byte budgets, correct
 schema, the researched keyword in the title and H1, Lighthouse 95+ on all four
 scores (mobile and desktop), and agentic browsing readiness.
 
-![Layered hero: sky, forest and foreground planes move at different depths as you scroll](media/arkansas-hero.webp)
+![A 20-second scroll through a site built with this skill: living hero, flight map to Arkansas, the lot, a real-terrain 3D parcel and the buying steps](media/arkansas-scroll.webp)
+
+*A real site built with this skill, scrolled top to bottom.
+[Watch it in full quality (MP4)](https://github.com/NicoSKOOL/ai-ranking-scroll-seo/releases/download/v1.1.0/terrenos-arkansas-scroll.mp4)
+or [open the live site](https://terrenos-arkansas-scroll-home.nico-510.workers.dev/en/).*
 
 ## What it does
 
@@ -55,14 +59,17 @@ Terrenos Arkansas: Spanish, English and Portuguese, built with this skill.
 
 ![Real USGS terrain of Cherokee Village as a 3D block; one lot lifts out and fans into five labelled layers, with an image-to-3D farmhouse and trees on top](media/arkansas-parcel.webp)
 
-Result on the staging deploy (3-run median), with the 4K hero, its living video loop and the lazy-loaded 3D section with real models:
+Lighthouse on the live deploy (English homepage, mobile), with the 4K hero, its
+video loop and the 3D section with real models all on the page:
+
+![Lighthouse: Performance 96, Accessibility 100, Best Practices 100, SEO 100, Agentic Browsing 4/4](media/lighthouse-en.webp)
+
+Gate runs (median of three) across all three languages:
 
 | Route | Performance | Accessibility | Best Practices | SEO | Agentic |
 |---|---|---|---|---|---|
-| es / en / pt, mobile | 99 / 97 / 97 | 100 | 100 | 100 | 100 |
-| es / en / pt, desktop | 100 | 100 | 100 | 100 | 100 |
-
-(SEO measured without the `is-crawlable` audit, since staging is noindex by design.)
+| es / en / pt, mobile | 97 / 96 / 97 | 100 | 100 | 100 | 100 |
+| es / en / pt, desktop | 100 / 99 / 100 | 100 | 100 | 100 | 100 |
 
 ## Install
 
