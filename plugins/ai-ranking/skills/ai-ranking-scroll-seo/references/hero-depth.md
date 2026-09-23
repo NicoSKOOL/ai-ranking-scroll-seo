@@ -2,7 +2,7 @@
 
 ## Standing preference
 
-For hero-led marketing websites, **layering is part of the baseline, not an optional polish pass**. A beautiful full-screen photograph with one parallax transform and some text fades can still feel flat. Design a memorable spatial relationship in the hero from the beginning, rather than waiting for Nate to ask for more depth.
+For hero-led marketing websites, **layering is part of the baseline, not an optional polish pass**. A beautiful full-screen photograph with one parallax transform and some text fades can still feel flat. Design a memorable spatial relationship in the hero from the beginning, rather than waiting for the client to ask for more depth.
 
 This preference applies to the hero, not to every section of every website. Preserve the requested brand, content, framework, and functionality. Honor explicit static or simpler directions. Working surfaces such as dashboards do not need an invented marketing hero.
 

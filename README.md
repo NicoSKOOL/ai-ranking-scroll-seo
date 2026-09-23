@@ -76,6 +76,12 @@ Result on the staging deploy (3-run median), with the 4K hero, its living video 
 Then ask for it in plain words ("build me a scroll site for my landscaping
 business") or call it directly with `/ai-ranking:ai-ranking-scroll-seo`.
 
+**In the Claude app (claude.ai or Desktop):** download
+`ai-ranking-scroll-seo.zip` from the
+[latest release](https://github.com/NicoSKOOL/ai-ranking-scroll-seo/releases/latest),
+then upload it under Settings > Capabilities > Skills. The build and gate
+scripts run in Claude Code, so use the plugin route for full builds.
+
 **Or copy the skill folder** into your own skills directory:
 
 ```bash
@@ -91,8 +97,8 @@ cp -r ai-ranking-scroll-seo/plugins/ai-ranking/skills/ai-ranking-scroll-seo ~/.c
 | Google Chrome | screenshots and Lighthouse | google.com/chrome |
 | `cwebp` | WebP conversion | `brew install webp` |
 | Python 3 + fontTools, numpy, Pillow | font subsetting, terrain | `pip install fonttools brotli numpy pillow` |
-| ffmpeg (full build) | only for scroll-scrubbed video | `brew install ffmpeg` |
-| `FAL_KEY` or `KIE_AI_API_KEY` | only for generated imagery | see `.env.example` |
+| ffmpeg (full build) | only for video: scroll-scrubbed clips and hero loops | `brew install ffmpeg` |
+| `FAL_KEY` or `KIE_AI_API_KEY` | only for generated images, 3D models and video | see `.env.example` |
 | DataForSEO | only for keyword volumes (any MCP or API access) | [dataforseo.com](https://app.dataforseo.com/?aff=182182) |
 
 Check your setup with:

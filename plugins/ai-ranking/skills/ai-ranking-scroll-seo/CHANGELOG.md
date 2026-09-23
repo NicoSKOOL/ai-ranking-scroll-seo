@@ -6,6 +6,17 @@ Entries before 2026-09-23 are inherited from scroll-craft (MIT). Builds carry a
 
 
 
+## 1.1.0 (2026-09-23): packaged release
+
+- Version 1.1.0 in plugin.json and marketplace.json; `claude plugin validate`
+  passes for both.
+- Release asset `ai-ranking-scroll-seo.zip` (the skill folder) for upload in
+  the Claude app.
+- doctor.mjs checks what this skill actually uses: FAL_KEY (or
+  KIE_AI_API_KEY) from env or any parent `.env`, cwebp (required: every image
+  is WebP), python fontTools + brotli. ffmpeg is now optional (video only).
+- Removed the last inherited personal reference from hero-depth.md.
+
 ## 2026-09-23 (night): a hero video that moves
 
 Nico: "why on earth did you make a still image as a video?" The first loop

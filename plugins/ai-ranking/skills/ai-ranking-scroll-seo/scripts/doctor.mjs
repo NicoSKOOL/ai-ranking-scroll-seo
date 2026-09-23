@@ -12,7 +12,9 @@
  *     scale, fps, psnr and the webp muxer, then fails with "No option name
  *     near ..." or "Unable to choose an output format", both of which read as
  *     a mistake in your command rather than a missing feature.
- *   - no KIE_AI_API_KEY, which only matters if you are generating assets.
+ *   - no FAL_KEY (or KIE_AI_API_KEY), which only matters if you are
+ *     generating assets. fal.ai is the default route for this skill.
+ *   - no cwebp: every shipped image is WebP, so optimize-images.mjs needs it.
  *   - playwright-core resolving from the wrong directory. It is required from
  *     the BUILD folder, not from the skill.
  */
@@ -76,9 +78,21 @@ for (const c of candidates) {
   if (n > filterCount) { filterCount = n; ffmpeg = c; }
   if (n > 200) break;
 }
-add("required", "ffmpeg (full build)", filterCount > 200,
+// ffmpeg is only needed for video (scroll-scrubbed clips, hero loops, posters),
+// so a missing or stripped one is a warning, not a stop.
+add("optional", "ffmpeg (full build)", filterCount > 200,
   ffmpeg ? `${ffmpeg}  (${filterCount} filters)` : "not found",
-  "A stripped ffmpeg lacks scale/fps/psnr and the webp muxer. Install a full build (Windows: winget install Gyan.FFmpeg) or set SCROLLCRAFT_FFMPEG to one.");
+  "Only for video. A stripped ffmpeg lacks scale/fps/psnr and the webp muxer. Install a full build (macOS: brew install ffmpeg, Windows: winget install Gyan.FFmpeg) or set SCROLLCRAFT_FFMPEG to one.");
+
+// --------------------------------------------------------------- cwebp ----
+const cwebp = run("cwebp", ["-version"]);
+add("required", "cwebp", Boolean(cwebp), cwebp ? `v${cwebp.trim()}` : "not found",
+  "Every shipped image is WebP. Install libwebp: brew install webp (macOS), apt install webp (Linux), winget install Google.Libwebp (Windows).");
+
+// ------------------------------------------------------ python fonttools ----
+const py = run("python3", ["-c", "import fontTools, brotli; print(fontTools.version)"]);
+add("optional", "python3 fontTools+brotli", Boolean(py), py ? `fontTools ${py.trim()}` : "not importable",
+  "For subset-fonts.py (and numpy + Pillow for terrain.py): pip install fonttools brotli numpy pillow");
 
 if (ffmpeg && filterCount > 200) {
   const enc = run(ffmpeg, ["-hide_banner", "-encoders"]) || "";
@@ -121,22 +135,24 @@ const chrome = [
 add("verify", "Chrome", Boolean(chrome), chrome || "not found",
   "Install Chrome, or set SCROLLCRAFT_CHROME to an executable.");
 
-// ------------------------------------------------------------- kie key ----
-function findKey() {
-  if (process.env.KIE_AI_API_KEY) return "env";
+// ------------------------------------------------------------ API keys ----
+function findKey(name) {
+  if (process.env[name]) return "env";
   let dir = process.cwd();
   for (let i = 0; i < 8; i++) {
     const p = path.join(dir, ".env");
-    if (fs.existsSync(p) && /^\s*KIE_AI_API_KEY\s*=\s*\S+/m.test(fs.readFileSync(p, "utf8"))) return p;
+    if (fs.existsSync(p) && new RegExp(`^\\s*${name}\\s*=\\s*\\S+`, "m").test(fs.readFileSync(p, "utf8"))) return p;
     const up = path.dirname(dir);
     if (up === dir) break;
     dir = up;
   }
   return null;
 }
-const keyWhere = findKey();
-add("optional", "KIE_AI_API_KEY", Boolean(keyWhere), keyWhere || "not set",
-  "Only needed to GENERATE imagery. Building from your own photos and footage needs no key and no spend. Copy .env.example to .env to set one.");
+const fal = findKey("FAL_KEY"), kie = findKey("KIE_AI_API_KEY");
+add("optional", "FAL_KEY (default)", Boolean(fal), fal || "not set",
+  "Only needed to GENERATE imagery, 3D models or video (fal.ai: GPT Image 2.5, Meshy/Tripo, Kling). Your own photos need no key. Copy .env.example to .env.");
+if (!fal) add("optional", "  └ KIE_AI_API_KEY", Boolean(kie), kie || "not set",
+  "Alternative generator (kie.ai). Either key is enough.");
 
 // ----------------------------------------------------------- workspace ----
 let ws = null;
