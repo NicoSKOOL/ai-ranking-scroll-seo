@@ -5,6 +5,22 @@ Entries before 2026-09-23 are inherited from scroll-craft (MIT). Builds carry a
 `BUILD-REPORT.md`.
 
 
+
+## 2026-09-23 (later): exploded parcel, a 3D device on real terrain
+
+Nico: "it feels like it's missing a wow element". Added a Three.js section to
+the Terrenos Arkansas build: a real 700 m block of Cherokee Village (USGS 3DEP
+elevation, NAIP aerial), a lot boundary that draws on it, then the lot lifts out
+and fans into five labelled layers (terrain, contours every metre, boundary,
+utilities, house) and settles back. Lazy-loaded: mobile Performance 97-98.
+
+- New: scripts/terrain.py, references/exploded-parcel.md,
+  templates/exploded-parcel.ts.
+- Layers rising one by one from the bottom crossed each other; lift the stack as
+  one piece, then spread.
+- Floating labels collided; project, sort bottom-up, push apart.
+- python.org Python on macOS failed TLS to USGS (no root certs); fetch via curl.
+
 ## 2026-09-23: ai-ranking-scroll-seo 1.0 (fork) and the first gated build
 
 Forked from scroll-craft 0.3.0 (MIT) as ai-ranking-scroll-seo. First build:

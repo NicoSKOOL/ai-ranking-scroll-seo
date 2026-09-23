@@ -46,6 +46,10 @@ finished scroll page is the expensive way.
 
 Multi-language builds use the Astro output mode ([references/i18n.md](references/i18n.md)).
 High-trust businesses run in trust mode ([references/trust-mode.md](references/trust-mode.md)).
+For land, real estate and construction, the 3D **exploded parcel** device (real
+USGS terrain, a lot that lifts out into labelled layers) is in
+[references/exploded-parcel.md](references/exploded-parcel.md) with a ready scene
+in `templates/exploded-parcel.ts`.
 
 ## What this is not
 

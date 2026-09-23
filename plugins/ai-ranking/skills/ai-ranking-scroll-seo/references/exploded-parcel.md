@@ -1,0 +1,81 @@
+# Exploded parcel (3D device)
+
+A real 3D block of the actual ground, then one lot lifts out and fans apart into
+labelled layers. Built for land, real estate, construction, landscaping, solar,
+anything sold as "a piece of the earth". The terrain and aerial are real public
+data; the lot boundary, utilities and building are illustrative and captioned so.
+
+Reference build: Terrenos Arkansas, section "Your lot, layer by layer".
+
+## Pipeline
+
+```bash
+# 1. real terrain + aerial for any US point (USGS 3DEP + NAIP, public domain)
+python3 <skill>/scripts/terrain.py --lat 36.2944 --lon -91.5449 --size 700 --grid 128 --out assets/terrain/site
+cp assets/terrain/site-height.bin assets/terrain/site.json public/terrain/
+cwebp -q 68 -resize 1024 0 assets/terrain/site-aerial.png -o public/terrain/site-aerial-1024.webp
+# 2. scene: copy templates/exploded-parcel.ts into the build, set LOT (u, v, w, h
+#    in 0..1 of the block, v from north) on an undeveloped patch next to a road
+npm i three
+```
+
+`--size 700` (metres) with `--grid 128` gives ~5.5 m cells: enough relief to
+read, small enough that a 100 m lot is visible. A 128² grid is 32 KB.
+
+## Markup contract
+
+```html
+<section class="parcel" data-sc-act="pin" data-sc-span="3.4" style="--sc-span:3.4">
+  <div data-sc-stage class="parcel__stage">
+    <div class="parcel__head"><h2>...</h2><p>...</p></div>
+    <figure class="parcel__figure"><img class="parcel__poster" ...><div class="parcel__canvas"></div></figure>
+    <ol class="parcel__layers"><li class="parcel__layer">...</li> x5</ol>
+    <p class="caption">Real terrain (USGS). Boundary, utilities and house illustrative.</p>
+  </div>
+</section>
+```
+
+Static (no JS, reduced motion, motion off, no WebGL2): poster + ordered list,
+a normal document. 3D mode adds `.is-3d`: the canvas fills the stage and the
+same `<li>`s become floating labels projected next to their layer.
+
+## Loading rule (keeps Lighthouse at 95+)
+
+Three.js is ~150 KB gzipped. Import it with a dynamic `import()` from an
+IntersectionObserver with `rootMargin: '150% 0px'`, only in cinematic mode and
+only if `getContext('webgl2')` succeeds. Lighthouse scores the first screen,
+so nothing 3D is on that path. Result on the reference build: mobile
+Performance unchanged (97-98), TBT under 100 ms.
+
+The render loop reads `--sc-p` from the act's inline style (cheap), renders
+only when progress changed, and stops while the section is off screen.
+
+## Choreography that works
+
+| p | What happens |
+|---|---|
+| 0 to .18 | the block rises from below |
+| .16 to .34 | the lot boundary draws on the terrain (tube `setDrawRange`) |
+| .30 to .50 | camera dollies from overview to the lot; terrain dims to 50% |
+| .44 to .56 | the whole lot lifts out as ONE slice |
+| .52 to .74 | it fans apart, top layers travel furthest; labels arrive per layer |
+| .74 to .86 | hold: the money shot |
+| .86 to .98 | the stack settles back and the house lands |
+
+## Traps
+
+- **Layers rising one after another from the bottom** pass through each other
+  (the house ended up under the ground layer). Lift the whole stack, then
+  spread with offset `i * GAP`: order is preserved at every frame.
+- **Labels collide** when layers are closer on screen than a label is tall.
+  Project, sort bottom-up, push each label above the previous one.
+- **A soil slab under the lot pokes through dips** in the terrain before it
+  lifts. Show it only once the lift starts.
+- **The stack runs off the top** of the frame: aim the camera at the middle of
+  the exploded stack, not the lot, and shift the frame with
+  `camera.setViewOffset` (right on desktop so it clears the heading, down on
+  phones).
+- **python.org macOS Python has no root certificates**: terrain.py downloads
+  with curl for that reason.
+- **Poster**: capture it from the page itself at p ≈ 0.8 with the head, labels
+  and caption hidden, so static mode shows the same money shot.
