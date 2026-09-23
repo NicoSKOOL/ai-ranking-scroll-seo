@@ -65,3 +65,37 @@ Local implementation, when available: `OtherWorlds/sonder-studio/` in the option
 The [ten-site rebuild](approved-collection.md) extends these principles to
 products, community, software, advisory, hospitality, objects, and editorial
 experiences. Read it for rendering choices and the complete delivery gate.
+
+## Resolution and a living back plate (Terrenos Arkansas, 2026-09-23)
+
+Nico: "the images in the first fold are not the best high quality". What fixed it:
+
+- **Re-master, don't regenerate.** Feed each existing plane to the GPT Image 2.5
+  edit endpoint (`fal.mjs still "Re-render this exact image at 4K..." --ref
+  old.png --size 3840x2160 --quality max`, plus `--transparent` for planes).
+  Composition and alignment survive. Two side effects to check: the model
+  sharpens the foreground (blur it back, ~3 px at 4K, premultiplied, so the
+  depth of field returns) and it may paint new elements (it added a mist blob
+  over the headline): clip the new alpha to the old silhouette.
+- **Ship the resolution.** Desktop srcset to 2560w. Phone crops at
+  640/768/1080w: 768 is what a 412 px, 1.75x phone (Lighthouse's device) picks,
+  so the audit never pulls the 1080. Budgets apply to 768.
+- **Preloads read images.json** like `<Pic>`. A hand-written preload that lists
+  different widths than the `<picture>` downloads the hero twice (it cost 10
+  Performance points).
+- **Only the LCP plane gets fetchpriority=high.** The back plate at high
+  priority competed with the forest plane on phones.
+- **Put the headline above the planes** once the planes are sharper and
+  taller; the forest reached the button.
+- **Living back plate.** Animate only the back plate (sky, ridges, far water),
+  never the sharp planes: `fal.mjs video back.jpg raw.mp4 "Locked-off tripod
+  shot... clouds drift, mist breathes along the ridges, light ripples on the
+  lake" --loop` (Kling v3 Pro, USD 0.14/s, first and last frame pinned). Kling
+  held the camera still; Flux 3 does not. Pinned ends still leave a small jump,
+  so crossfade the last second into the first with ffmpeg `xfade` (9 s loop).
+  Encode H.264 CRF 22 (1.4 MB at 1920) and a portrait phone crop from the same
+  x offset as the `-m` still (465 KB). The page requests it 3 s after `load`,
+  fades it in on `playing`, pauses it off screen, skips it on Save-Data and
+  2G/3G, and never loads it without `.sc-js` (reduced motion, motion off). Any
+  earlier than that and its bytes land in the simulated LCP window (mobile
+  Performance fell to 87).

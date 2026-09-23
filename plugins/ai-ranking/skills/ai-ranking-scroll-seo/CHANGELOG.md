@@ -6,6 +6,30 @@ Entries before 2026-09-23 are inherited from scroll-craft (MIT). Builds carry a
 
 
 
+## 2026-09-23 (evening): real 3D models, 4K hero, living back plate
+
+Nico: "can these be rendered better, and the images in the first fold are not
+the best high quality". Terrenos Arkansas after the change: mobile Performance
+99/97/97, desktop 100, everything else 100, verify-seo green.
+
+- fal.mjs: `model` (image-to-3D, Meshy 7.1 or Tripo P2) and `video`
+  (image-to-video, Kling v3 Pro, `--loop` pins the last frame to the first).
+- New templates/exploded-parcel-models.ts: meshopt glb loader that grounds,
+  centres, scales and rotates models; the scene swaps them in after the
+  primitive props render. Canvas street textures. PCFShadowMap + radius.
+- Tripo P2 beat Meshy 7.1 on the house (Meshy's roof was streaky); Meshy fine
+  for trees. gltf-transform took 10-16 MB models to 0.5-0.8 MB.
+- Hero: re-master planes via the edit endpoint at 3840x2160 `--quality max`;
+  soften the foreground and clip its alpha to the old silhouette (the
+  re-master added a mist blob over the headline).
+- Phone crops at 640/768/1080w: 768 is the Lighthouse device's pick.
+- Preload srcsets now come from images.json (a stale hand-written preload
+  downloaded the hero twice). Only the LCP plane is fetchpriority=high.
+- verify-seo: 1440w+ files get a 600 KB large-display cap (`--large-kb`)
+  instead of a blanket exemption, so a 2560w plane is checked, not skipped.
+- Video loop requested 3 s after load; at 170 ms it dragged mobile Performance
+  to 87.
+
 ## 2026-09-23 (later): exploded parcel, a 3D device on real terrain
 
 Nico: "it feels like it's missing a wow element". Added a Three.js section to

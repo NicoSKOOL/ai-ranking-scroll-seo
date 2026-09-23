@@ -344,6 +344,9 @@ node <skill>/scripts/fal.mjs still "$(cat assets/STYLE.txt)\n\nBACK PLATE ONLY: 
 node <skill>/scripts/fal.mjs still "...ISOLATED MID LAYER ON A TRANSPARENT BACKGROUND..." assets/masters/hero-mid.png --size 2048x1152 --transparent --manifest /tmp/m/mid.json
 node <skill>/scripts/fal.mjs still "Same place ... top-down over ONE lot" assets/masters/lot.png --ref assets/masters/aerial.png
 node <skill>/scripts/optimize-images.mjs --in assets/masters --out public/img --budgets assets/budgets.json
+# 3D props and a living back plate (see exploded-parcel.md and hero-depth.md)
+node <skill>/scripts/fal.mjs model assets/models/src/house.png assets/models/raw/house.glb [--endpoint fal-ai/tripo3d/p2/image-to-3d]
+node <skill>/scripts/fal.mjs video assets/video/back.jpg assets/video/raw.mp4 "Locked-off tripod shot..." --duration 10 --loop
 ```
 
 Give each parallel call its own manifest file and merge afterwards; concurrent

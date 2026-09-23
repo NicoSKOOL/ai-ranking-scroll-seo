@@ -29,6 +29,7 @@ const opt = (n, d) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] :
 const DIST = opt('--dist', 'dist');
 const pages = JSON.parse(fs.readFileSync(opt('--pages', 'pages.json'), 'utf8'));
 const BUDGET = +opt('--budget-kb', 200) * 1024;
+const LARGE_CAP = +opt('--large-kb', 600) * 1024; // 1440w+ files: desktop / retina only
 
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 const decode = s => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -110,7 +111,13 @@ const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDi
 let over = 0;
 for (const f of walk(DIST)) {
   if (/\.(png|jpe?g|gif)$/i.test(f) && !/favicon|apple-touch/i.test(f)) fail('site', `raster non-WebP file shipped: ${path.relative(DIST, f)}`);
-  if (/\.(webp|avif)$/i.test(f) && fs.statSync(f).size > BUDGET && !/-(1440|1920)\.webp$/.test(f)) { over++; fail('site', `${path.relative(DIST, f)} ${(fs.statSync(f).size / 1024).toFixed(0)} KB over ${BUDGET / 1024} KB`); }
+  // Phone-reachable files (< 1440w) get the page budget. Large-display widths
+  // (1440w and up, only chosen by wide or high-DPR screens) get a hard ceiling.
+  if (/\.(webp|avif)$/i.test(f)) {
+    const wm = f.match(/-(\d{3,4})\.(webp|avif)$/), large = wm && +wm[1] >= 1440;
+    const cap = large ? LARGE_CAP : BUDGET, size = fs.statSync(f).size;
+    if (size > cap) { over++; fail('site', `${path.relative(DIST, f)} ${(size / 1024).toFixed(0)} KB over ${cap / 1024} KB${large ? ' (large-display cap)' : ''}`); }
+  }
 }
 for (const f of ['robots.txt', 'sitemap.xml', 'llms.txt']) {
   if (!fs.existsSync(path.join(DIST, f))) fail('site', `missing ${f}`); else ok('site', `${f} present`);

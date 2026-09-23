@@ -82,6 +82,34 @@ camera. What fixed it:
   dollies ~45% closer and raises its target to the top of the stack, so the
   house and street fill the frame. Labels whose layer leaves the frame fade out.
 
+## Real models (house, trees)
+
+Primitive props read as toys once the camera pushes in. Replace them with
+image-to-3D models, loaded after the scene first renders:
+
+1. Generate an isolated reference per object with GPT Image 2.5
+   (`--transparent`, three-quarter view from ~25 degrees above, whole object in
+   frame, even overcast light, no cast shadow).
+2. `fal.mjs model ref.png raw/house.glb --endpoint fal-ai/tripo3d/p2/image-to-3d`
+   (or the default Meshy 7.1, USD 0.80 each). On the reference build Tripo P2
+   gave the cleaner house (crisp siding, clean metal roof); Meshy's roof came
+   out streaky. Meshy did well on trees. Render both in a lab page before
+   choosing.
+3. Compress: `npx @gltf-transform/cli optimize raw.glb public/models/x.glb
+   --compress meshopt --texture-compress webp --texture-size 1024` (512 and
+   `--simplify-ratio 0.35` for trees). 10-16 MB raw became 0.5-0.8 MB with no
+   visible loss.
+4. `templates/exploded-parcel-models.ts` loads with the meshopt decoder,
+   grounds, centres and scales each model (`fit` by width or height, `rotY`
+   before measuring, since the generator picks its own front: check the porch
+   faces the street). Trees are clones of one loaded model, so six cost the
+   same as one.
+5. Keep the primitive props: the scene renders with them at once and swaps in
+   the models when they arrive. A slow link never blanks the section.
+
+Street surfaces get canvas-painted textures (asphalt speckle with wheel-track
+wear, concrete slabs with joints): zero bytes, no request.
+
 ## Traps
 
 - **Layers rising one after another from the bottom** pass through each other
@@ -97,5 +125,7 @@ camera. What fixed it:
   phones).
 - **python.org macOS Python has no root certificates**: terrain.py downloads
   with curl for that reason.
+- **`PCFSoftShadowMap` is gone** in current three (warns, falls back). Use
+  `PCFShadowMap` with `shadow.radius`.
 - **Poster**: capture it from the page itself at p ≈ 0.8 with the head, labels
   and caption hidden, so static mode shows the same money shot.

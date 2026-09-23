@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildStreet, buildUtilities, buildHouse, buildTrees } from './exploded-parcel-props.ts';
+import { loadModel, place } from './exploded-parcel-models.ts';
 
 type Meta = { grid: number; min_m: number; max_m: number; size_m: number };
 
@@ -50,7 +51,7 @@ export async function mountParcel(section: HTMLElement) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   canvasHost.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-hidden', 'true');
 
@@ -142,6 +143,7 @@ export async function mountParcel(section: HTMLElement) {
   Object.assign(sun.shadow.camera, { left: -2.2, right: 2.2, top: 2.2, bottom: -2.2, near: 0.5, far: 20 });
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.02;
+  sun.shadow.radius = 3; // soft edges with PCF (PCFSoft was removed in three r18x)
   const layers: THREE.Group[] = [];
   const addLayer = () => { const g = new THREE.Group(); lot.add(g); layers.push(g); return g; };
 
@@ -203,10 +205,25 @@ export async function mountParcel(section: HTMLElement) {
   const house = buildHouse(lw, lh);
   house.position.set(0, groundY(0, -0.05), houseZ);
   l5.add(house);
-  l5.add(buildTrees(lw, lh, [
-    [-0.38, -0.3, groundY(-0.38, -0.3)], [0.36, -0.32, groundY(0.36, -0.32)], [-0.34, 0.22, groundY(-0.34, 0.22)],
-    [0.4, 0.12, groundY(0.4, 0.12)], [-0.1, -0.4, groundY(-0.1, -0.4)], [0.18, -0.42, groundY(0.18, -0.42)],
-  ]));
+  const treeSpots: [number, number][] = [[-0.38, -0.3], [0.36, -0.32], [-0.34, 0.22], [0.4, 0.12], [-0.1, -0.4], [0.18, -0.42]];
+  const trees = buildTrees(lw, lh, treeSpots.map(([u, v]) => [u, v, groundY(u, v)] as [number, number, number]));
+  l5.add(trees);
+
+  // swap the primitive house and trees for the real models once they arrive
+  Promise.all([
+    loadModel('/models/house.glb', lw * 0.42, 'x', -Math.PI / 2), // porch faces the street
+    loadModel('/models/oak.glb', 0.34, 'y'),
+    loadModel('/models/pine.glb', 0.42, 'y'),
+  ]).then(([houseModel, oak, pine]) => {
+    houseModel.position.copy(house.position);
+    l5.remove(house, trees);
+    l5.add(houseModel);
+    treeSpots.forEach(([u, v], i) => {
+      const s = 0.85 + ((i * 37) % 30) / 100;
+      l5.add(place(i % 2 ? pine : oak, u * lw, groundY(u, v), v * lh, s, i * 1.7));
+    });
+    last = -1; // redraw with the models
+  }).catch(() => { /* keep the primitive props */ });
 
   // ---- choreography --------------------------------------------------------
   const target = new THREE.Vector3(), camPos = new THREE.Vector3();

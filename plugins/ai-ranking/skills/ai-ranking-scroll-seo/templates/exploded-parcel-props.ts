@@ -14,24 +14,56 @@ function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 
   return m;
 }
 
+// ---- surface textures, painted on a canvas (no download) --------------------
+// Aggregate speckle for asphalt; slabs with expansion joints for concrete.
+function surface(kind: 'asphalt' | 'concrete', repeatX: number, repeatY = 1) {
+  const n = 256, c = document.createElement('canvas');
+  c.width = c.height = n;
+  const x = c.getContext('2d')!;
+  x.fillStyle = kind === 'asphalt' ? '#34383a' : '#bdb7aa';
+  x.fillRect(0, 0, n, n);
+  let seed = kind === 'asphalt' ? 7 : 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < (kind === 'asphalt' ? 5200 : 2600); i++) {
+    const v = rnd(), light = kind === 'asphalt' ? 30 + v * 80 : 150 + v * 70;
+    x.fillStyle = `rgba(${light},${light},${light - 4},${0.25 + rnd() * 0.45})`;
+    const r = kind === 'asphalt' ? rnd() * 1.6 + 0.4 : rnd() * 1.1 + 0.3;
+    x.fillRect(rnd() * n, rnd() * n, r, r);
+  }
+  if (kind === 'asphalt') {
+    // wheel-track wear: two slightly darker, smoother bands
+    x.fillStyle = 'rgba(20,22,24,0.18)';
+    x.fillRect(0, n * 0.18, n, n * 0.14); x.fillRect(0, n * 0.68, n, n * 0.14);
+  } else {
+    x.strokeStyle = 'rgba(90,86,78,0.7)'; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(0, 1); x.lineTo(n, 1); x.moveTo(1, 0); x.lineTo(1, n); x.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeatX, repeatY);
+  t.anisotropy = 4;
+  return t;
+}
+
 // ---- street: asphalt, curbs, dashed centre line, sidewalk, driveway ---------
 type Ground = (fu: number, fv: number) => number; // lot-local height at a fraction of the lot (-0.5..0.5)
 
 export function buildStreet(lw: number, lh: number, y: number, houseZ: number, gy: Ground) {
   const g = new THREE.Group();
   const len = lw * 1.6, width = 0.26, z = lh / 2 + width / 2 + 0.07;
-  g.add(mesh(new THREE.BoxGeometry(len, 0.03, width), std(0x2e3230, 0.95), 0, y, z));
+  g.add(mesh(new THREE.BoxGeometry(len, 0.03, width), std(0xffffff, 0.92, { map: surface('asphalt', len / width, 1) }), 0, y, z));
   const curbMat = std(0xc9c4b8, 0.9);
   g.add(mesh(new THREE.BoxGeometry(len, 0.045, 0.018), curbMat, 0, y + 0.008, z - width / 2));
   g.add(mesh(new THREE.BoxGeometry(len, 0.045, 0.018), curbMat, 0, y + 0.008, z + width / 2));
   const dashMat = new THREE.MeshStandardMaterial({ color: 0xf0d27a, roughness: 0.6, emissive: 0x3a2c05 });
   for (let x = -len / 2 + 0.06; x < len / 2; x += 0.13) g.add(mesh(new THREE.BoxGeometry(0.07, 0.034, 0.012), dashMat, x, y + 0.001, z));
   // sidewalk on the lot side
-  g.add(mesh(new THREE.BoxGeometry(len, 0.036, 0.06), std(0xb9b3a6, 0.95), 0, y + 0.004, lh / 2 + 0.035));
+  g.add(mesh(new THREE.BoxGeometry(len, 0.036, 0.06), std(0xffffff, 0.95, { map: surface('concrete', len / 0.06, 1) }), 0, y + 0.004, lh / 2 + 0.035));
   // driveway from the street up to the house
   const dLen = Math.max(0.05, lh / 2 - houseZ);
   const zMid = houseZ + dLen / 2;
-  const drive = mesh(new THREE.BoxGeometry(0.11, 0.012, dLen), std(0x5f5a52, 0.95), lw * 0.12, (gy(0.12, zMid / lh) + y) / 2 + 0.01, zMid);
+  const drive = mesh(new THREE.BoxGeometry(0.11, 0.012, dLen), std(0xd8d2c4, 0.95, { map: surface('concrete', 1, dLen / 0.11) }), lw * 0.12, (gy(0.12, zMid / lh) + y) / 2 + 0.01, zMid);
   drive.rotation.x = Math.atan2(gy(0.12, houseZ / lh) - y, dLen); // follow the slope down to the street
   g.add(drive);
   return g;

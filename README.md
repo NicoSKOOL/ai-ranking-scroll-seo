@@ -53,13 +53,13 @@ Terrenos Arkansas: Spanish, English and Portuguese, built with this skill.
 | ![Three flight routes from Buenos Aires, Santiago and São Paulo converge on Arkansas](media/arkansas-flight.webp) | ![The map dives into Arkansas and the state outline draws in](media/arkansas-arkansas.webp) |
 | ![Zoom from an aerial of the lake community into one lot, whose boundary draws](media/arkansas-lot.webp) | ![The price fills block by block: down payment plus 24 monthly payments](media/arkansas-price.webp) |
 
-![Real USGS terrain of Cherokee Village as a 3D block; one lot lifts out and fans into five labelled layers](media/arkansas-parcel.webp)
+![Real USGS terrain of Cherokee Village as a 3D block; one lot lifts out and fans into five labelled layers, with an image-to-3D farmhouse and trees on top](media/arkansas-parcel.webp)
 
-Result on the staging deploy (3-run median), including the lazy-loaded 3D section:
+Result on the staging deploy (3-run median), with the 4K hero, its living video loop and the lazy-loaded 3D section with real models:
 
 | Route | Performance | Accessibility | Best Practices | SEO | Agentic |
 |---|---|---|---|---|---|
-| es / en / pt, mobile | 97 / 97 / 98 | 100 | 100 | 100 | 100 |
+| es / en / pt, mobile | 99 / 97 / 97 | 100 | 100 | 100 | 100 |
 | es / en / pt, desktop | 100 | 100 | 100 | 100 | 100 |
 
 (SEO measured without the `is-crawlable` audit, since staging is noindex by design.)
@@ -105,7 +105,7 @@ node plugins/ai-ranking/skills/ai-ranking-scroll-seo/scripts/doctor.mjs
 
 | Script | What it does |
 |---|---|
-| `fal.mjs` | Generate stills (and transparent layers) with GPT Image 2.5 on fal.ai; `--ref` edits keep a scene consistent; writes a provenance manifest |
+| `fal.mjs` | Stills and transparent layers (GPT Image 2.5, `--ref` edits and 4K re-masters), image-to-3D models (`model`: Meshy 7.1 / Tripo P2) and ambient loops (`video`: Kling v3 Pro, `--loop`); writes a provenance manifest |
 | `terrain.py` | Real elevation + aerial imagery for any US point (USGS), ready for the 3D exploded-parcel device |
 | `kie.mjs` | Alternative generator, including 5 s video clips for scrub sections |
 | `optimize-images.mjs` | Masters to responsive WebP, budgets enforced on the file phones download |
@@ -125,7 +125,7 @@ plugins/ai-ranking/skills/ai-ranking-scroll-seo/
                         exploded-parcel, devices, hero-depth, feel, taste,
                         uniqueness, worlds, verify
   scripts/              the tools above
-  templates/            fingerprint registry, exploded-parcel.ts (3D scene)
+  templates/            fingerprint registry, exploded-parcel*.ts (3D scene, props, model loader)
 ```
 
 The CHANGELOG is worth reading on its own: each entry is something that broke
