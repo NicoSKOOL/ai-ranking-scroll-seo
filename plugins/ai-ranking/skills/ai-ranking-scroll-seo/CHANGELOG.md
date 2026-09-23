@@ -20,6 +20,10 @@ utilities, house) and settles back. Lazy-loaded: mobile Performance 97-98.
   one piece, then spread.
 - Floating labels collided; project, sort bottom-up, push apart.
 - python.org Python on macOS failed TLS to USGS (no root certs); fetch via curl.
+- Nico: "render the house and street better, zoom in more". Props moved to
+  templates/exploded-parcel-props.ts with real detail, environment light and
+  soft shadows; prop layers got terrain-shaped plates; the camera now pushes in
+  on the top of the stack at the hold. Mobile Performance unchanged.
 
 ## 2026-09-23: ai-ranking-scroll-seo 1.0 (fork) and the first gated build
 

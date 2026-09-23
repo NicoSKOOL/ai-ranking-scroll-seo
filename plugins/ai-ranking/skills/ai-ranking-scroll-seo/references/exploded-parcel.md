@@ -14,7 +14,7 @@ Reference build: Terrenos Arkansas, section "Your lot, layer by layer".
 python3 <skill>/scripts/terrain.py --lat 36.2944 --lon -91.5449 --size 700 --grid 128 --out assets/terrain/site
 cp assets/terrain/site-height.bin assets/terrain/site.json public/terrain/
 cwebp -q 68 -resize 1024 0 assets/terrain/site-aerial.png -o public/terrain/site-aerial-1024.webp
-# 2. scene: copy templates/exploded-parcel.ts into the build, set LOT (u, v, w, h
+# 2. scene: copy templates/exploded-parcel.ts and exploded-parcel-props.ts into the build, set LOT (u, v, w, h
 #    in 0..1 of the block, v from north) on an undeveloped patch next to a road
 npm i three
 ```
@@ -61,6 +61,26 @@ only when progress changed, and stops while the section is off screen.
 | .52 to .74 | it fans apart, top layers travel furthest; labels arrive per layer |
 | .74 to .86 | hold: the money shot |
 | .86 to .98 | the stack settles back and the house lands |
+
+## Making the props read as real objects
+
+First pass (plain boxes, a cone roof, no shadows) looked like placeholders on
+camera. What fixed it:
+
+- **Light:** `RoomEnvironment` through PMREM as `scene.environment` (intensity
+  ~0.35) plus one warm directional sun with PCF soft shadows. Keep the shadow
+  camera tight around the lot (±2.2 units): shadows only where the eye is.
+- **Detail at the right scale:** a house = plinth, walls, glowing windows with
+  sills, door, two roof slabs with overhang and gable ends, chimney, covered
+  porch. A street = asphalt, curbs, dashed centre line, sidewalk, driveway. A
+  power line = poles, crossarms, insulators, three sagging wires, transformer,
+  service drop. Water = meter box and a pipe that follows the ground.
+- **Plates:** layers that hold props (utilities, house) sit on a translucent
+  plate shaped like the lot's terrain. Without it, props float in black and
+  anything running away from the camera (pipe, driveway) reads as sticking up.
+- **Push in at the hold:** between the explode and the collapse, the camera
+  dollies ~45% closer and raises its target to the top of the stack, so the
+  house and street fill the frame. Labels whose layer leaves the frame fade out.
 
 ## Traps
 

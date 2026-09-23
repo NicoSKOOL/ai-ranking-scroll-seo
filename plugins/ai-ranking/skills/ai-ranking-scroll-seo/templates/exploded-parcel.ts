@@ -3,6 +3,8 @@
 // Loaded on demand (see mountParcel in page.ts), so none of this is on the
 // first-paint path. Progress comes from the engine's --sc-p on the act.
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { buildStreet, buildUtilities, buildHouse, buildTrees } from './exploded-parcel-props.ts';
 
 type Meta = { grid: number; min_m: number; max_m: number; size_m: number };
 
@@ -47,15 +49,20 @@ export async function mountParcel(section: HTMLElement) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   canvasHost.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-hidden', 'true');
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(small ? 42 : 34, 1, 0.1, 200);
-  scene.add(new THREE.HemisphereLight(0xfdf1dc, 0x1c3a31, 1.25));
-  const sun = new THREE.DirectionalLight(0xffe2b8, 2.1);
-  sun.position.set(-7, 9, 5);
-  scene.add(sun);
+  // soft image-based light for the props, a warm low sun for shadows
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.35;
+  scene.add(new THREE.HemisphereLight(0xfdf1dc, 0x1c3a31, 0.9));
+  const sun = new THREE.DirectionalLight(0xffe2b8, 2.4);
+  scene.add(sun, sun.target);
 
   const tex = await new THREE.TextureLoader().loadAsync(small ? '/terrain/cv-aerial-1024.webp' : '/terrain/cv-aerial-1024.webp');
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -70,7 +77,9 @@ export async function mountParcel(section: HTMLElement) {
   for (let i = 0; i < tp.count; i++) tp.setY(i, yOf(hm(i)));
   tg.computeVertexNormals();
   const terrainMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 });
-  block.add(new THREE.Mesh(tg, terrainMat));
+  const terrainMesh = new THREE.Mesh(tg, terrainMat);
+  terrainMesh.receiveShadow = true;
+  block.add(terrainMesh);
 
   // soil skirts: four walls from the terrain edge down to BASE
   const skirt = (pts: [number, number][]) => {
@@ -125,12 +134,22 @@ export async function mountParcel(section: HTMLElement) {
   const lot = new THREE.Group();
   lot.position.copy(lotCentre);
   scene.add(lot);
+  // shadows only where they matter: a tight shadow camera around the lot
+  sun.position.copy(lotCentre).add(new THREE.Vector3(-3, 6, 2.5));
+  sun.target.position.copy(lotCentre);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
+  Object.assign(sun.shadow.camera, { left: -2.2, right: 2.2, top: 2.2, bottom: -2.2, near: 0.5, far: 20 });
+  sun.shadow.bias = -0.0006;
+  sun.shadow.normalBias = 0.02;
   const layers: THREE.Group[] = [];
   const addLayer = () => { const g = new THREE.Group(); lot.add(g); layers.push(g); return g; };
 
   // 1 · ground (real aerial on real relief) with a thin soil slab
   const l1 = addLayer();
-  l1.add(new THREE.Mesh(lotSurface(), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 })));
+  const groundMesh = new THREE.Mesh(lotSurface(), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
+  groundMesh.receiveShadow = true;
+  l1.add(groundMesh);
   const slab = new THREE.Mesh(new THREE.BoxGeometry(LOT.w * SIZE, 0.12, LOT.h * SIZE), new THREE.MeshStandardMaterial({ color: 0x4a3120, roughness: 1 }));
   slab.position.y = -0.07; l1.add(slab);
 
@@ -162,38 +181,32 @@ export async function mountParcel(section: HTMLElement) {
   });
   const boundaryTotal = tube.geometry.index!.count;
 
-  // 4 · access and utilities (illustrative): road on the south edge, power, water
+  // 4 · access and utilities (illustrative): street, power line, water.
+  // Layers 4 and 5 sit on a translucent plate shaped like the lot's terrain, as
+  // in an exploded diagram, so props rest on something and shadows land.
+  const plate = () => {
+    const m = new THREE.Mesh(lotSurface(24), new THREE.MeshStandardMaterial({ color: 0x1d4a3e, transparent: true, opacity: 0.62, roughness: 0.9, side: THREE.DoubleSide }));
+    m.receiveShadow = true; return m;
+  };
   const l4 = addLayer();
   const lw = LOT.w * SIZE, lh = LOT.h * SIZE;
-  const road = new THREE.Mesh(new THREE.BoxGeometry(lw * 1.5, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0x3a3f3c, roughness: 0.9 }));
-  road.position.set(0, edgePts[100].y - 0.02, lh / 2 + 0.16); l4.add(road);
-  const dash = new THREE.Mesh(new THREE.BoxGeometry(lw * 1.5, 0.035, 0.012), new THREE.MeshBasicMaterial({ color: 0xe8d9a8 }));
-  dash.position.copy(road.position); l4.add(dash);
-  const poleMat = new THREE.MeshStandardMaterial({ color: 0x6b5238 });
-  const poles = [-lw * 0.45, lw * 0.45].map(x => {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.5, 8), poleMat);
-    p.position.set(x, road.position.y + 0.25, lh / 2 + 0.04); l4.add(p); return p;
-  });
-  const wire = new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(
-    poles[0].position.clone().add(new THREE.Vector3(0, 0.24, 0)), new THREE.Vector3(0, road.position.y + 0.38, lh / 2 + 0.04),
-    poles[1].position.clone().add(new THREE.Vector3(0, 0.24, 0))), 32, 0.004, 4), new THREE.MeshBasicMaterial({ color: 0x1b1b1b }));
-  l4.add(wire);
-  const water = new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(lw * 0.15, 0.05, lh / 2 + 0.06), new THREE.Vector3(lw * 0.15, 0.05, 0)), 8, 0.014, 6),
-    new THREE.MeshStandardMaterial({ color: 0x4aa3d8, emissive: 0x0b3350 }));
-  l4.add(water);
+  const frontY = edgePts[100].y - 0.02;
+  const houseZ = -lh * 0.05;
+  const groundY = (du: number, dv: number) => yOf(heightAt(cu + du * LOT.w, cv + dv * LOT.h)) - lotY + 0.012;
+  l4.add(plate());
+  l4.add(buildStreet(lw, lh, frontY, houseZ + lh * 0.15, groundY));
+  l4.add(buildUtilities(lw, lh, frontY, groundY));
 
-  // 5 · a future home (illustrative massing)
+  // 5 · a future home (illustrative) with a little landscaping
   const l5 = addLayer();
-  const house = new THREE.Group();
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(lw * 0.34, 0.2, lh * 0.34), new THREE.MeshStandardMaterial({ color: 0xf1e9da, roughness: 0.8 }));
-  walls.position.y = 0.1; house.add(walls);
-  const roofShape = new THREE.Shape([new THREE.Vector2(-lw * 0.19, 0), new THREE.Vector2(lw * 0.19, 0), new THREE.Vector2(0, 0.16)]);
-  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: lh * 0.38, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: 0x2f3a36, roughness: 0.7 }));
-  roof.position.set(0, 0.2, -lh * 0.19); house.add(roof);
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(lw * 0.2, 0.02, lh * 0.12), new THREE.MeshStandardMaterial({ color: 0x9a6b43 }));
-  deck.position.set(0, 0.01, lh * 0.23); house.add(deck);
-  house.position.y = yOf(heightAt(cu, cv)) - lotY;
+  l5.add(plate());
+  const house = buildHouse(lw, lh);
+  house.position.set(0, groundY(0, -0.05), houseZ);
   l5.add(house);
+  l5.add(buildTrees(lw, lh, [
+    [-0.38, -0.3, groundY(-0.38, -0.3)], [0.36, -0.32, groundY(0.36, -0.32)], [-0.34, 0.22, groundY(-0.34, 0.22)],
+    [0.4, 0.12, groundY(0.4, 0.12)], [-0.1, -0.4, groundY(-0.1, -0.4)], [0.18, -0.42, groundY(0.18, -0.42)],
+  ]));
 
   // ---- choreography --------------------------------------------------------
   const target = new THREE.Vector3(), camPos = new THREE.Vector3();
@@ -228,8 +241,12 @@ export async function mountParcel(section: HTMLElement) {
 
     const s = (a: number, b: number) => a + (b - a) * dolly;
     const orbit = (p - 0.5) * 0.35;
-    const r = s(overview.r, close.r), polar = s(overview.polar, close.polar), az = s(overview.az, close.az) + orbit;
+    // at the hold, push in on the top of the stack (street, utilities, house)
+    const push = range(p, 0.72, 0.8) * (1 - range(p, 0.86, 0.94));
+    const r = s(overview.r, close.r) * (1 - push * (small ? 0.4 : 0.45));
+    const polar = s(overview.polar, close.polar) + push * 0.08, az = s(overview.az, close.az) + orbit;
     target.set(0, 0.4, 0).lerp(tmp.copy(lotCentre).add(new THREE.Vector3(0, small ? 2.1 : 2.05, 0)), dolly);
+    target.y += push * (LIFT + 3.4 * GAP - (small ? 2.1 : 2.05) + 0.15);
     camPos.set(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(r).add(target);
     camera.position.copy(camPos);
     camera.lookAt(target);
@@ -254,7 +271,9 @@ export async function mountParcel(section: HTMLElement) {
     pos.forEach(({ el, i, x, y, hh }) => {
       const e = range(p, 0.56 + i * 0.035, 0.64 + i * 0.035) * (1 - range(p, 0.84, 0.9));
       el.style.transform = `translate(${Math.min(x + 12, w - el.offsetWidth - 12)}px, ${Math.max(8, y - hh / 2)}px)`;
-      el.style.opacity = String(e);
+      // a layer pushed out of frame by the close-up takes its label with it
+      const inFrame = y > hh * 0.6 && y < h - hh * 0.6 ? 1 : 0;
+      el.style.opacity = String(e * inFrame);
     });
   }
 
