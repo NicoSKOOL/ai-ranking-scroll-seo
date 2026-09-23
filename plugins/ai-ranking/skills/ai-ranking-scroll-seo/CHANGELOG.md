@@ -6,6 +6,16 @@ Entries before 2026-09-23 are inherited from scroll-craft (MIT). Builds carry a
 
 
 
+## 2026-09-23 (night): a hero video that moves
+
+Nico: "why on earth did you make a still image as a video?" The first loop
+animated only the back plate (covered by the still planes) and pinned the end
+frame to the start, which froze it (0.75 mean change per second). Now: animate
+the sky+forest composite unpinned (7.6 per second), ping-pong loop, fade the
+still forest out when it plays. `fal.mjs video` no longer implies `--loop` is
+the way to loop, and hero-depth.md adds a motion measurement to run before
+showing a clip. Mobile Performance 95/97/95, desktop 99-100.
+
 ## 2026-09-23 (evening): real 3D models, 4K hero, living back plate
 
 Nico: "can these be rendered better, and the images in the first fold are not

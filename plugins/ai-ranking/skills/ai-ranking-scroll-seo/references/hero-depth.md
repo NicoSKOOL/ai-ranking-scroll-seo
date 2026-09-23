@@ -87,15 +87,23 @@ Nico: "the images in the first fold are not the best high quality". What fixed i
   priority competed with the forest plane on phones.
 - **Put the headline above the planes** once the planes are sharper and
   taller; the forest reached the button.
-- **Living back plate.** Animate only the back plate (sky, ridges, far water),
-  never the sharp planes: `fal.mjs video back.jpg raw.mp4 "Locked-off tripod
-  shot... clouds drift, mist breathes along the ridges, light ripples on the
-  lake" --loop` (Kling v3 Pro, USD 0.14/s, first and last frame pinned). Kling
-  held the camera still; Flux 3 does not. Pinned ends still leave a small jump,
-  so crossfade the last second into the first with ffmpeg `xfade` (9 s loop).
-  Encode H.264 CRF 22 (1.4 MB at 1920) and a portrait phone crop from the same
-  x offset as the `-m` still (465 KB). The page requests it 3 s after `load`,
-  fades it in on `playing`, pauses it off screen, skips it on Save-Data and
-  2G/3G, and never loads it without `.sc-js` (reduced motion, motion off). Any
-  earlier than that and its bytes land in the simulated LCP window (mobile
-  Performance fell to 87).
+- **A video hero must visibly move.** Nico on the first attempt: "why on earth
+  did you make a still image as a video?" Two mistakes made it read as a still:
+  (1) animating only the back plate, which the sharp forest and grass planes
+  mostly cover; (2) pinning the last frame to the first (`--loop`), which makes
+  the model hold still (mean change 0.6-0.75 per second, whatever the prompt).
+  What works: composite back + mid at their on-page offsets, animate that
+  unpinned with strong verbs ("clouds sweep steadily... thick mist rolls and
+  swirls through the valleys... a steady breeze sways the pines... sunlight
+  glitters"), got 7.6 per second. Loop it forward then reversed (20 s,
+  seamless; a crossfade would morph visibly when the ends differ this much).
+  Keep only the grass plane and the headline as scroll layers; fade the still
+  mid plane out once the video plays. hqdn3d + CRF 28 gives 4.5 MB at 1920 and
+  1.5 MB for the phone crop.
+- **Measure motion before showing anyone:** sample one frame per second and
+  take the mean absolute difference between neighbours. Under ~2 is a still
+  image to the eye; aim for 5+.
+- **Timing.** The page requests the video 3 s after `load`, fades it in on
+  `playing`, pauses it off screen, skips it on Save-Data and 2G/3G, and never
+  loads it without `.sc-js` (reduced motion, motion off). Any earlier and its
+  bytes land in the simulated LCP window (mobile Performance fell to 87).

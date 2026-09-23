@@ -13,7 +13,7 @@
      node fal.mjs video assets/masters/hero-back.jpg assets/video/hero-raw.mp4 "<motion prompt>"
                   [--endpoint fal-ai/kling-video/v3/pro/image-to-video] [--duration 10] [--loop]
                   [--manifest assets/asset-manifest.json] [--id hero-loop]
-                                                     # image-to-video; --loop pins the last frame to the first
+                                                     # image-to-video; unpinned by default (--loop pins ends, kills motion)
      node fal.mjs probe                              # checks FAL_KEY and the default model
 
    Reads FAL_KEY from the environment (or a .env found walking up from cwd).
@@ -185,9 +185,11 @@ async function model3d(args, image, outFile, key) {
   logManifest(args, { id: args.id || path.basename(outFile, '.glb'), file: outFile, model: endpoint, source_image: image, polys: input.target_polycount, pbr: input.enable_pbr, request_id });
 }
 
-// image-to-video for ambient loops. Kling v3 Pro takes an end frame, so --loop
-// pins both ends to the same still; the page still ping-pongs or crossfades,
-// because models drift (usually a slow push-in) between the pinned ends.
+// image-to-video for ambient loops. Kling v3 Pro takes an end frame, and --loop
+// pins both ends to the same still, BUT a pinned clip barely moves (it has to
+// come back to the start): 0.75 mean change per second, which reads as a still
+// image. For visible motion generate unpinned and loop in ffmpeg (ping-pong).
+// Always measure motion before shipping (see references/hero-depth.md).
 async function video(args, image, outFile, motion, key) {
   if (!image || !outFile || !motion) {
     console.error('usage: fal.mjs video <image> out.mp4 "<motion prompt>" [--duration 10] [--loop] [--endpoint id]');
